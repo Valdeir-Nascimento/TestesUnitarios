@@ -12,6 +12,7 @@ import buildermaster.BuilderMaster;
 import org.junit.*;
 import org.junit.rules.ErrorCollector;
 import org.junit.rules.ExpectedException;
+import org.mockito.Matchers;
 
 import java.util.Arrays;
 import java.util.Calendar;
@@ -20,6 +21,7 @@ import java.util.List;
 
 import static br.ce.wcaquino.builders.FilmeBuilder.umFilme;
 import static br.ce.wcaquino.builders.FilmeBuilder.umFilmeSemEstoque;
+import static br.ce.wcaquino.builders.LocacaoBuilder.umLocacao;
 import static br.ce.wcaquino.builders.UsuarioBuilder.umUsuario;
 import static br.ce.wcaquino.matchers.MatchersProprios.*;
 import static org.hamcrest.CoreMatchers.equalTo;
@@ -126,7 +128,7 @@ public class LocacaoServiceTest {
     public void naoDeveAlugarFilmeParaNegativadoSPC() throws FilmeSemEstoqueException {
         //cenario
         Usuario u1 = umUsuario().agora();
-        when(spcService.possuiNegativacao(u1)).thenReturn(true);
+        when(spcService.possuiNegativacao(any(Usuario.class))).thenReturn(true);
 
         //acao
         List<Filme> filmes = Arrays.asList(umFilme().agora());
@@ -146,16 +148,27 @@ public class LocacaoServiceTest {
     @Test
     public void deveEnviarEmailParaLocacoesAtrasadas() {
         Usuario u1 = umUsuario().agora();
+        Usuario u2 = umUsuario().comNome("Usuario em dia").agora();
+        Usuario u3 = umUsuario().comNome("Outro atrasado").agora();
 
         //cenario
-        List<Locacao> locacaoList = Arrays.asList(LocacaoBuilder.umLocacao().comUsuario(u1).comDataRetorno(DataUtils.obterDataComDiferencaDias(-2)).agora());
+        List<Locacao> locacaoList = Arrays.asList(
+                umLocacao().comUsuario(u1).atrasada().agora(),
+                umLocacao().comUsuario(u2).agora(),
+                umLocacao().comUsuario(u3).atrasada().agora(),
+                umLocacao().comUsuario(u3).atrasada().agora()
+        );
         when(dao.obterlocacoesPendentes()).thenReturn(locacaoList);
 
         //acao
         service.notificarAtrasos();
 
         //verificacao
+        verify(emailService, times(3)).notificarAtrasos(Matchers.<Usuario>any(Usuario.class));
         verify(emailService).notificarAtrasos(u1);
+        verify(emailService, atLeastOnce()).notificarAtrasos(u3);
+        verify(emailService, never()).notificarAtrasos(u2);
+        verifyNoMoreInteractions(emailService);
 
     }
 
