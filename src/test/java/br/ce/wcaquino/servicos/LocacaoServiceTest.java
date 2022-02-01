@@ -12,7 +12,10 @@ import buildermaster.BuilderMaster;
 import org.junit.*;
 import org.junit.rules.ErrorCollector;
 import org.junit.rules.ExpectedException;
+import org.mockito.InjectMocks;
 import org.mockito.Matchers;
+import org.mockito.Mock;
+import org.mockito.MockitoAnnotations;
 
 import java.util.Arrays;
 import java.util.Calendar;
@@ -32,6 +35,7 @@ import static org.mockito.Mockito.*;
 
 public class LocacaoServiceTest {
 
+    @InjectMocks
     private LocacaoService service;
 
     @Rule
@@ -40,19 +44,16 @@ public class LocacaoServiceTest {
     @Rule
     public ExpectedException exception = ExpectedException.none();
 
+    @Mock
     private LocacaoDAO dao;
+    @Mock
     private SPCService spcService;
+    @Mock
     private EmailService emailService;
 
     @Before
     public void setup() {
-        dao = mock(LocacaoDAO.class);
-        service = new LocacaoService();
-        service.setLocacaoDAO(dao);
-        spcService = mock(SPCService.class);
-        service.setSpcService(spcService);
-        emailService = mock(EmailService.class);
-        service.setEmailService(emailService);
+        MockitoAnnotations.initMocks(this);
     }
 
     @Test
